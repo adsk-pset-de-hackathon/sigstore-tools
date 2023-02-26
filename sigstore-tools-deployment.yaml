@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sigstore-tools
+  labels:
+    app: sigstore-tools
+spec:
+  selector:
+    matchLabels:
+      app: sigstore-tools
+  template:
+    metadata:
+      labels:
+        app: sigstore-tools
+    spec:
+      serviceAccountName: archivista
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: client
+        image: ghcr.io/adsk-pset-de-hackathon/sigstore-tools/sigstore-tools:latest
+        command: ["sleep"]
+        args: ["1000000000"]
+        volumeMounts:
+        - name: spiffe-workload-api
+          mountPath: /run/spire/sockets
+          readOnly: true
+        env:
+        - name: COSIGN_EXPERIMENTAL
+          value: "1"
+        - name: SIGSTORE_CT_LOG_PUBLIC_KEY_FILE
+          value: /custom-sigstore-public-keys/custom-ctlog-public-key.pem
+        - name: SIGSTORE_REKOR_PUBLIC_KEY
+          value: /custom-sigstore-public-keys/custom-rekor-public-key.pem
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: /run/spire/sockets/spire-agent.sock
+      volumes:
+      - name: spiffe-workload-api
+        csi:
+          driver: "csi.spiffe.io"
+          readOnly: true
